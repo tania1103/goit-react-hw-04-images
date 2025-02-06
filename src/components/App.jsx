@@ -1,4 +1,3 @@
-import { Component } from 'react';
 import { AppWrap } from './App.styled';
 import { ToastContainer } from 'react-toastify';
 import Searchbar from './Searchbar';
@@ -7,57 +6,51 @@ import Button from './Button';
 import ImageGallery from './ImageGallery';
 import Loader from './Loader';
 import Error from './Error';
+import { useState } from 'react';
 
-export class App extends Component {
-  state = {
-    search: '',
-    loading: false,
-    currentPage: 1,
-    totalPage: null,
-    error: null,
-    images: [],
-    selectedImageIndex: null,
-  };
+const App = () => {
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPage, setTotalPage] = useState(null);
+  const [error, setError] = useState(null);
+  const [images, setImages] = useState([]);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(null);
 
-  changeStateCallback = stateCallback => {
-    this.setState(prevState => stateCallback(prevState));
-  };
-
-  render() {
-    const {
-      images,
-      loading,
-      selectedImageIndex,
-      search,
-      currentPage,
-      totalPage,
-      error,
-    } = this.state;
-    const { changeStateCallback } = this;
-    return (
-      <AppWrap>
-        <Searchbar onSubmit={changeStateCallback} />
-        {error && <Error message={error.message} />}
-        <ImageGallery
-          changeStateCallback={changeStateCallback}
-          search={search}
-          page={currentPage}
+  return (
+    <AppWrap>
+      <Searchbar
+        onSetSearch={setSearch}
+        onSetCurrentPage={setCurrentPage}
+        onSetTotalPage={setTotalPage}
+        onSetImages={setImages}
+        onSetError={setError}
+      />
+      {error && <Error message={error.message} />}
+      <ImageGallery
+        onSetLoading={setLoading}
+        onSetTotalPage={setTotalPage}
+        onSetImages={setImages}
+        onSetError={setError}
+        onSetSelectedImageIndex={setSelectedImageIndex}
+        search={search}
+        page={currentPage}
+        images={images}
+      />
+      {loading && <Loader />}
+      {totalPage > currentPage && (
+        <Button onClick={setCurrentPage}>Load More</Button>
+      )}
+      {(selectedImageIndex || selectedImageIndex === 0) && (
+        <Modal
+          onClose={setSelectedImageIndex}
+          imgInd={selectedImageIndex}
           images={images}
-          loading={loading}
         />
-        {loading && <Loader />}
-        {totalPage > currentPage && (
-          <Button onClick={changeStateCallback}>Load More</Button>
-        )}
-        {(selectedImageIndex || selectedImageIndex === 0) && (
-          <Modal
-            onClose={changeStateCallback}
-            imgInd={selectedImageIndex}
-            images={images}
-          />
-        )}
-        <ToastContainer autoClose={2000} />
-      </AppWrap>
-    );
-  }
-}
+      )}
+      <ToastContainer autoClose={2000} />
+    </AppWrap>
+  );
+};
+
+export default App;

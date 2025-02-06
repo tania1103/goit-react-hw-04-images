@@ -1,80 +1,69 @@
 import { ImageGalleryList } from './ImageGallery.styled';
 import ImageGalleryItem from 'components/ImageGalleryItem';
-import { Component } from 'react';
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { perPage, imagesApi } from '../api';
 
-class ImageGallery extends Component {
-  state = {
-    search: this.props.search,
-    page: this.props.page,
-  };
-
-  static propTypes = {
-    changeStateCallback: PropTypes.func.isRequired,
-    search: PropTypes.string,
-    page: PropTypes.number.isRequired,
-    images: PropTypes.array.isRequired,
-    loading: PropTypes.bool.isRequired,
-  };
-
-  componentDidUpdate(prevProps, prevState) {
-    if (
-      prevProps.search !== this.props.search ||
-      prevProps.page !== this.props.page
-    ) {
-      this.props.changeStateCallback(prevState => ({ loading: true }));
-
-      imagesApi(this.props.search, this.props.page)
+const ImageGallery = ({
+  onSetLoading,
+  onSetTotalPage,
+  onSetImages,
+  onSetError,
+  onSetSelectedImageIndex,
+  search,
+  page,
+  images,
+}) => {
+  useEffect(() => {
+    if (search) {
+      onSetLoading(true);
+      imagesApi(search, page)
         .then(images => {
           const total = Math.ceil(images.totalHits / perPage);
-
           if (images.total === 0) {
             return Promise.reject(
-              new Error(
-                `There are no pictures for the request of '${this.props.search}'`
-              )
+              new Error(`There are no pictures for the request of '${search}'`)
             );
           } else {
-            this.props.changeStateCallback(prevState => ({ totalPage: total }));
-            this.props.page === 1
-              ? this.props.changeStateCallback(prevState => ({
-                  images: [...images.hits],
-                }))
-              : this.props.changeStateCallback(prevState => ({
-                  images: [...prevState.images, ...images.hits],
-                }));
+            onSetTotalPage(total);
+            page === 1
+              ? onSetImages([...images.hits])
+              : onSetImages(prevState => [...prevState, ...images.hits]);
           }
         })
         .catch(error => {
-          this.props.changeStateCallback(prevState => ({ error: error }));
+          onSetError(error);
           console.error(error);
         })
-        .finally(() =>
-          this.props.changeStateCallback(prevState => ({ loading: false }))
-        );
+        .finally(() => onSetLoading(false));
     }
-  }
+  }, [search, page, onSetLoading, onSetTotalPage, onSetImages, onSetError]);
 
-  render() {
-    return (
-      <>
-        <ImageGalleryList>
-          {this.props.images.map((image, index) => (
-            <ImageGalleryItem
-              key={image.id}
-              src={image.webformatURL}
-              alt={image.tags}
-              onClick={() =>
-                this.props.changeStateCallback(prevState => ({
-                  selectedImageIndex: index,
-                }))
-              }
-            />
-          ))}
-        </ImageGalleryList>
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <ImageGalleryList>
+        {images.map((image, index) => (
+          <ImageGalleryItem
+            key={image.id}
+            src={image.webformatURL}
+            alt={image.tags}
+            onClick={() => onSetSelectedImageIndex(index)}
+          />
+        ))}
+      </ImageGalleryList>
+    </>
+  );
+};
+
+ImageGallery.propTypes = {
+  onSetLoading: PropTypes.func.isRequired,
+  onSetTotalPage: PropTypes.func.isRequired,
+  onSetImages: PropTypes.func.isRequired,
+  onSetError: PropTypes.func.isRequired,
+  onSetSelectedImageIndex: PropTypes.func.isRequired,
+  search: PropTypes.string,
+  page: PropTypes.number.isRequired,
+  images: PropTypes.array.isRequired,
+};
+
 export default ImageGallery;

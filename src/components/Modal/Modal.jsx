@@ -1,26 +1,12 @@
 import { Overlay, ModalContainer } from './Modal.styled';
-import { Component } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
 
 const modalRoot = document.querySelector('#modal-root');
 
-export default class Modal extends Component {
-  static propTypes = {
-    onClose: PropTypes.func.isRequired,
-    imgInd: PropTypes.number.isRequired,
-    images: PropTypes.array.isRequired,
-  };
-
-  componentDidMount(e) {
-    window.addEventListener('keydown', this.handleClose);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleClose);
-  }
-
-  handleClose = e => {
+const Modal = ({ onClose, imgInd, images }) => {
+  const handleClose = e => {
     if (e.type === 'keydown' && e.code !== 'Escape') {
       return;
     }
@@ -29,18 +15,34 @@ export default class Modal extends Component {
       return;
     }
 
-    this.props.onClose(prevState => ({ selectedImageIndex: null }));
+    onClose(null);
   };
 
-  render() {
-    const activeImg = this.props.images[`${this.props.imgInd}`];
-    return createPortal(
-      <Overlay onClick={this.handleClose}>
-        <ModalContainer>
-          <img src={activeImg.largeImageURL} alt={activeImg.tags} />
-        </ModalContainer>
-      </Overlay>,
-      modalRoot
-    );
-  }
-}
+  useEffect(() => {
+    window.addEventListener('keydown', handleClose);
+    return () => {
+      window.removeEventListener('keydown', handleClose);
+    };
+  });
+
+  const activeImg = () => {
+    return images[`${imgInd}`];
+  };
+
+  return createPortal(
+    <Overlay onClick={handleClose}>
+      <ModalContainer>
+        <img src={activeImg().largeImageURL} alt={activeImg().tags} />
+      </ModalContainer>
+    </Overlay>,
+    modalRoot
+  );
+};
+
+Modal.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  imgInd: PropTypes.number.isRequired,
+  images: PropTypes.array.isRequired,
+};
+
+export default Modal;
